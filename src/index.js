@@ -1,22 +1,34 @@
+import iziToast from 'izitoast';
+import 'izitoast/dist/css/iziToast.min.css';
+import SlimSelect from 'slim-select';
+import 'slim-select/styles';
+import { fetchBreeds } from './cat-api';
+import { fetchCatByBreed } from './cat-api';
 const elements = {
-  select: document.querySelector('.breed-select'),
+  selecta: document.querySelector('.breed-select'),
   cardCat: document.querySelector('.card-cat'),
   loder: document.querySelector('.loader'),
   error: document.querySelector('.error'),
 };
-
-elements.select.addEventListener('change', handlerInfoCat);
-
+elements.selecta.addEventListener('change', handlerInfoCat);
 function handlerInfoCat(event) {
   elements.loder.removeAttribute('hidden', 'hidden');
-  serviceGetInfoCat(event.target.value)
+  fetchCatByBreed(event.target.value)
     .then(data => {
       elements.cardCat.innerHTML = createMarkup(data);
       elements.loder.setAttribute('hidden', 'hidden');
+      if (!data[0]) {
+        elements.cardCat.innerHTML;
+        iziToast.show({
+          title: 'Oops! Something went wrong! Try reloading the page!',
+        });
+      }
     })
     .catch(err => {
       elements.loder.setAttribute('hidden', 'hidden');
-      elements.error.removeAttribute('hidden', 'hidden');
+      iziToast.show({
+        title: 'Oops! Something went wrong! Try reloading the page!',
+      });
       elements.cardCat.innerHTML;
     });
 }
@@ -27,46 +39,20 @@ function createOption(arr) {
     .join('');
 }
 
-function serviceCat() {
-  const MAIN_API = 'https://api.thecatapi.com/v1';
-  const PAR = '/breeds';
-  const API_KEY =
-    'live_F1JswQHNXiab7OVBGWFCkT3vt4fZPImj8AOcBIs0fZYYk71ryO1jOZAeb8WeRARW';
-  const params = new URLSearchParams({
-    api_key: API_KEY,
-  });
-  return fetch(`${MAIN_API}${PAR}?${params}`).then(resp => {
-    if (!resp.ok) {
-      throw new Error(resp.statusText);
-    }
-    return resp.json();
-  });
-}
-serviceCat()
+fetchBreeds()
   .then(data => {
-    elements.select.insertAdjacentHTML('afterbegin', createOption(data));
-    elements.select.style.display = 'block';
+    elements.selecta.insertAdjacentHTML('afterbegin', createOption(data));
     elements.loder.setAttribute('hidden', 'hidden');
+    new SlimSelect({
+      select: '#multiple',
+    });
   })
 
-  .catch(err => console.log(err));
-
-function serviceGetInfoCat(idCat) {
-  const MAIN_API = 'https://api.thecatapi.com/v1';
-  const PAR = '/images/search';
-  const API_KEY =
-    'live_F1JswQHNXiab7OVBGWFCkT3vt4fZPImj8AOcBIs0fZYYk71ryO1jOZAeb8WeRARW';
-  const params = new URLSearchParams({
-    api_key: API_KEY,
-    breed_ids: idCat,
-  });
-  return fetch(`${MAIN_API}${PAR}?${params}`).then(resp => {
-    if (!resp.ok) {
-      throw new Error(resp.statusText);
-    }
-    return resp.json();
-  });
-}
+  .catch(err =>
+    iziToast.show({
+      title: 'Oops! Something went wrong! Try reloading the page!',
+    })
+  );
 
 function createMarkup(arr) {
   return arr
